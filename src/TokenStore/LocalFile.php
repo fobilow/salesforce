@@ -14,28 +14,19 @@ class LocalFile implements StoreInterface
     /**
      * @var string
      */
-    private $filePath;
-
-    /**
-     * @var string
-     */
-    private $fileName = 'sf-key';
-
-    /**
-     * @var LocalFileConfigInterface
-     */
-    private $config;
-
+    private $fileName = '/tmp/sf-key';
 
     /**
      * @param AccessTokenGenerator     $accessTokenGenerator
-     * @param LocalFileConfigInterface $config
      */
-    public function __construct(AccessTokenGenerator $accessTokenGenerator, LocalFileConfigInterface $config)
+    public function __construct(AccessTokenGenerator $accessTokenGenerator)
     {
         $this->accessTokenGenerator = $accessTokenGenerator;
-        $this->filePath             = $config->getFilePath();
-        $this->config               = $config;
+    }
+
+    public function setFileName($filePath)
+    {
+      $this->fileName = $filePath;
     }
 
     /**
@@ -44,9 +35,10 @@ class LocalFile implements StoreInterface
      */
     public function fetchAccessToken()
     {
-        try {
-            $accessTokenJson = file_get_contents($this->filePath . '/' . $this->fileName);
-        } catch (\ErrorException $e) {
+        if(file_exists($this->fileName)){
+            $accessTokenJson = file_get_contents($this->fileName);
+        }
+        else{
             throw new \Exception('Salesforce access token not found');
         }
 
@@ -58,6 +50,6 @@ class LocalFile implements StoreInterface
      */
     public function saveAccessToken(AccessToken $accessToken)
     {
-        file_put_contents($this->filePath . '/' . $this->fileName, $accessToken->toJson());
+        file_put_contents($this->fileName, $accessToken->toJson());
     }
 }

@@ -36,6 +36,11 @@ class Client
      */
     private $guzzleClient;
 
+    /**
+    * @var ClientConfigInterface
+    */
+    private $config;
+
 
     /**
      * Create a sf client using a client config object or an array of params
@@ -46,6 +51,7 @@ class Client
      */
     public function __construct(ClientConfigInterface $clientConfig, \GuzzleHttp\Client $guzzleClient)
     {
+        $this->config             = $clientConfig;
         $this->salesforceLoginUrl = $clientConfig->getLoginUrl();
         $this->clientId           = $clientConfig->getClientId();
         $this->clientSecret       = $clientConfig->getClientSecret();
@@ -214,6 +220,30 @@ class Client
         return $this->salesforceLoginUrl . 'services/oauth2/authorize?' . http_build_query($params);
     }
 
+  /**
+   * Get the url to redirect users to when setting up a salesforce access token
+   *
+   * @return string
+   * @throws \Exception
+   */
+  public function getTokenUrl()
+  {
+    if(!$this->config instanceof TokenClientConfig)
+    {
+      throw new \Exception("Config passed must be an instance of TokenClientConfig");
+    }
+
+    $params = [
+      'client_id'     => $this->config->getClientId(),
+      'client_secret'     => $this->config->getClientSecret(),
+      'grant_type'    => 'password',
+      'username' => $this->config->getUsername(),
+      'password' => $this->config->getPassword().$this->config->getSecurityToken()
+    ];
+
+    return $this->config->getLoginUrl() . 'services/oauth2/token?' . http_build_query($params);
+  }
+
     /**
      * Refresh an existing access token
      *
@@ -263,7 +293,7 @@ class Client
 
             return $response;
         } catch (GuzzleRequestException $e) {
-            
+
             if ($e->getResponse() === null) {
         		throw $e;
         	}
@@ -286,7 +316,7 @@ class Client
         if ($this->accessToken === null) {
     		throw new AuthenticationException(0, "Access token not set");
     	}
-    	
+
         return 'Bearer ' . $this->accessToken->getAccessToken();
     }
 
