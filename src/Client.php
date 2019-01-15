@@ -3,6 +3,7 @@
 use Crunch\Salesforce\Exceptions\RequestException;
 use GuzzleHttp\Exception\RequestException as GuzzleRequestException;
 use Crunch\Salesforce\Exceptions\AuthenticationException;
+use Crunch\Salesforce\TokenStore\LocalFile;
 
 class Client
 {
@@ -52,6 +53,7 @@ class Client
     public function __construct(ClientConfigInterface $clientConfig, \GuzzleHttp\Client $guzzleClient)
     {
         $this->config             = $clientConfig;
+        $this->baseUrl            = $clientConfig->getBaseUrl();
         $this->salesforceLoginUrl = $clientConfig->getLoginUrl();
         $this->clientId           = $clientConfig->getClientId();
         $this->clientSecret       = $clientConfig->getClientSecret();
@@ -278,6 +280,30 @@ class Client
         $this->baseUrl     = $accessToken->getApiUrl();
     }
 
+    public function requestAccessToken($refresh = false)
+    {
+      $tokenGenerator = new AccessTokenGenerator();
+      $tokenStore = new LocalFile($tokenGenerator);
+      try
+      {
+        if($refresh)
+        {
+          throw new \Exception("Regenerate Access Token");
+        }
+        //Fetch token
+        $accessToken = $tokenStore->fetchAccessToken();
+      }
+      catch(\Exception $e)
+      {
+        $response = $this->guzzleClient->post($this->getTokenUrl());
+        $token = json_decode($response->getBody(), true);
+        $accessToken = $tokenGenerator->createFromSalesforceResponse($token);
+        //Save token
+        $tokenStore->saveAccessToken($accessToken);
+      }
+      $this->setAccessToken($accessToken);
+    }
+
     /**
      * @param string $method
      * @param string $url
@@ -305,14 +331,15 @@ class Client
             }
             throw new RequestException($e->getMessage(), (string)$e->getResponse()->getBody());
         }
-
     }
 
-    /**
-     * @return string
-     */
+  /**
+   * @return string
+   * @throws AuthenticationException
+   */
     private function getAuthHeader()
     {
+        $this->requestAccessToken();
         if ($this->accessToken === null) {
     		throw new AuthenticationException(0, "Access token not set");
     	}

@@ -5,6 +5,11 @@ interface ClientConfigInterface {
     /**
      * @return string
      */
+    public function getBaseUrl();
+
+    /**
+     * @return string
+     */
     public function getLoginUrl();
 
     /**

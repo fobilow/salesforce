@@ -5,6 +5,11 @@ class ClientConfig implements ClientConfigInterface {
     /**
      * @var
      */
+    private $baseUrl;
+
+    /**
+     * @var
+     */
     private $loginUrl;
     /**
      * @var
@@ -20,6 +25,14 @@ class ClientConfig implements ClientConfigInterface {
         $this->loginUrl = $loginUrl;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBaseUrl()
+    {
+      return $this->baseUrl;
     }
 
     /**
