@@ -53,12 +53,15 @@ class Client
     public function __construct(ClientConfigInterface $clientConfig, \GuzzleHttp\Client $guzzleClient)
     {
         $this->config             = $clientConfig;
-        $this->baseUrl            = $clientConfig->getBaseUrl();
         $this->salesforceLoginUrl = $clientConfig->getLoginUrl();
         $this->clientId           = $clientConfig->getClientId();
         $this->clientSecret       = $clientConfig->getClientSecret();
 
         $this->guzzleClient = $guzzleClient;
+        if($clientConfig instanceof TokenClientConfig)
+        {
+          $this->requestAccessToken();
+        }
     }
 
     /**
@@ -153,14 +156,37 @@ class Client
     {
         $url = $this->baseUrl . '/services/data/v20.0/sobjects/' . $object . '/';
 
+
         $response     = $this->makeRequest('post', $url, [
             'headers' => ['Content-Type' => 'application/json', 'Authorization' => $this->getAuthHeader()],
             'body'    => json_encode($data)
         ]);
         $responseBody = json_decode($response->getBody(), true);
-
         return $responseBody['id'];
     }
+
+  /**
+   * Make an upsert request
+   *
+   * @param string $object The object type to upsert
+   * @param string $externalIdField The name of the external if field of the record to upsert
+   * @param string $id The ID of the record to update
+   * @param array  $data The data to put into the record
+   * @return bool
+   * @throws \Exception
+   */
+  public function upsertRecord($object, $externalIdField, $id, array $data)
+  {
+    $url = $this->baseUrl . '/services/data/v20.0/sobjects/' . $object . '/' . $externalIdField . '/' . $id;
+
+    $response = $this->makeRequest('patch', $url, [
+      'headers' => ['Content-Type' => 'application/json', 'Authorization' => $this->getAuthHeader()],
+      'body'    => json_encode($data)
+    ]);
+
+    $responseBody = json_decode($response->getBody(), true);
+    return isset($responseBody['id'])? $responseBody['id'] : true;
+  }
 
     /**
      * Delete an object with th specified id
@@ -314,6 +340,7 @@ class Client
      */
     private function makeRequest($method, $url, $data)
     {
+      var_dump($url);
         try {
             $response = $this->guzzleClient->$method($url, $data);
 
@@ -339,7 +366,6 @@ class Client
    */
     private function getAuthHeader()
     {
-        $this->requestAccessToken();
         if ($this->accessToken === null) {
     		throw new AuthenticationException(0, "Access token not set");
     	}

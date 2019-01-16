@@ -5,10 +5,6 @@ class TokenClientConfig implements ClientConfigInterface {
     /**
      * @var
      */
-    private $baseUrl;
-    /**
-     * @var
-     */
     private $loginUrl;
     /**
      * @var
@@ -25,31 +21,14 @@ class TokenClientConfig implements ClientConfigInterface {
 
     private $securityToken;
 
-    public function __construct($loginUrl, $url, $clientId, $clientSecret, $username, $password, $securityToken)
+    public function __construct($loginUrl, $clientId, $clientSecret, $username, $password, $securityToken)
     {
         $this->loginUrl = $loginUrl;
-        $this->baseUrl = $url;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->username = $username;
         $this->password = $password;
         $this->securityToken = $securityToken;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getBaseUrl()
-    {
-      return $this->baseUrl;
-    }
-
-    /**
-     * @param mixed $url
-     */
-    public function setBaseUrl($url)
-    {
-      $this->baseUrl = $url;
     }
 
     /**
